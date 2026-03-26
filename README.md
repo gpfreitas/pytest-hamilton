@@ -172,6 +172,10 @@ fixture to run full sub-process pytest sessions and verify outcomes.
 
 ### Prerequisites
 
+You need [uv](https://docs.astral.sh/uv/) and [just](https://just.systems)
+installed. All other dev tools (pytest, ruff, ty, …) are managed by uv and
+installed automatically when you run `uv sync --extra test`.
+
 `pytester` is enabled in `tests/conftest.py`:
 
 ```python

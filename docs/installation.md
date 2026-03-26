@@ -18,6 +18,10 @@ pip install pytest-hamilton
 
 The source files for pytest-hamilton can be downloaded from the [Github repo](https://github.com/gpfreitas/pytest-hamilton).
 
+You will need [uv](https://docs.astral.sh/uv/) installed first
+([installation guide](https://docs.astral.sh/uv/getting-started/installation/)).
+All other dependencies are managed by uv.
+
 You can either clone the public repository:
 
 ```sh

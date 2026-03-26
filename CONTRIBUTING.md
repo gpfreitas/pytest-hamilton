@@ -40,13 +40,27 @@ If you are proposing a feature:
 
 ## Get Started!
 
-Ready to contribute? Here's how to set up `pytest_hamilton` for local development.
+Ready to contribute? Here's how to set up `pytest-hamilton` for local development.
 
-1. Fork the `pytest_hamilton` repo on GitHub.
+### Prerequisites
+
+You need two tools installed on your machine before anything else:
+
+| Tool | Purpose | Install |
+|---|---|---|
+| [uv](https://docs.astral.sh/uv/) | Python version management and dependency installation | [installation guide](https://docs.astral.sh/uv/getting-started/installation/) |
+| [just](https://just.systems) | Task runner (`just qa`, `just test`, …) | [installation guide](https://just.systems/man/en/packages.html) |
+
+Everything else — pytest, ruff, ty, coverage, ipdb — is installed automatically
+by `uv` as part of step 3 below. You do not need to install them separately.
+
+### Steps
+
+1. Fork the `pytest-hamilton` repo on GitHub.
 2. Clone your fork locally:
 
    ```sh
-   git clone git@github.com:your_name_here/pytest_hamilton.git
+   git clone git@github.com:your_name_here/pytest-hamilton.git
    ```
 
 3. Install the project and its dev dependencies:
