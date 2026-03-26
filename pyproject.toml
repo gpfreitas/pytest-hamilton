@@ -10,36 +10,36 @@ maintainers = [
   {name = "Guilherme Pereira de Freitas", email = "guilherme.freitas@gmail.com"}
 ]
 classifiers = [
-    # TODO
+    "Framework :: Pytest",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
 ]
 license = {text = "MIT"}
 dependencies = [
-  "typer",
-  "rich",
+  "pytest>=7.0",
+  "sf-hamilton",
 ]
 requires-python = ">= 3.10"
 
 [project.optional-dependencies]
 test = [
     "coverage",  # testing
-    "pytest",  # testing
-    "ruff",  # linting
-    "ty", # checking types
-    "ipdb", # debugging
+    "pytest",    # testing
+    "ruff",      # linting
+    "ty",        # type checking
+    "ipdb",      # debugging
 ]
 
 [project.urls]
-bugs = "https://github.com/gpfreitas/pytest_hamilton/issues"
-changelog = "https://github.com/gpfreitas/pytest_hamilton/blob/main/changelog.md"
-homepage = "https://github.com/gpfreitas/pytest_hamilton"
+bugs = "https://github.com/gpfreitas/pytest-hamilton/issues"
+changelog = "https://github.com/gpfreitas/pytest-hamilton/blob/main/HISTORY.md"
+homepage = "https://github.com/gpfreitas/pytest-hamilton"
 
-[project.scripts]
-pytest_hamilton = "pytest_hamilton.cli:app"
+[project.entry-points.pytest11]
+hamilton = "pytest_hamilton.pytest_hamilton"
 
 [tool.ty]
 # All rules are enabled as "error" by default; no need to specify unless overriding.
-# Example override: relax a rule for the entire project (uncomment if needed).
-# rules.TY015 = "warn"  # For invalid-argument-type, warn instead of error.
 
 [tool.ruff]
 line-length = 120
