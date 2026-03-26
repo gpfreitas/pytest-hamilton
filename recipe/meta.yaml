@@ -1,0 +1,52 @@
+{% set name = "pytest-hamilton" %}
+{% set version = "0.1.0" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/pytest_hamilton-{{ version }}.tar.gz
+  # Obtain after PyPI publish:
+  #   sha256sum dist/pytest_hamilton-{{ version }}.tar.gz
+  #   or copy from the PyPI download page for the .tar.gz asset
+  sha256: FIXME
+
+build:
+  number: 0
+  noarch: python
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+
+requirements:
+  host:
+    - python >=3.10
+    - pip
+    - hatchling
+  run:
+    - python >=3.10
+    - pytest >=7.0
+    - sf-hamilton >=1.28.0
+
+test:
+  imports:
+    - pytest_hamilton
+  requires:
+    - pip
+  commands:
+    - pip check
+    - pytest --help
+
+about:
+  home: https://github.com/gpfreitas/pytest-hamilton
+  summary: Automatic Hamilton-based fixtures for pytest
+  license: MIT
+  license_file: LICENSE
+  description: |
+    pytest-hamilton turns every node in an Apache Hamilton DAG into a
+    ready-to-use pytest fixture — with zero boilerplate in your test files.
+    Write a Hamilton module, point the plugin at it, and your tests can
+    request any computed node by name, exactly like any other fixture.
+
+extra:
+  recipe-maintainers:
+    - gpfreitas
