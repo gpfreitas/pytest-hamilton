@@ -1,16 +1,8 @@
-# Welcome to Pytest Hamilton's documentation!
+# Welcome to pytest-hamilton's documentation!
 
 ## Contents
 
-- [Readme](readme.md)
 - [Installation](installation.md)
 - [Usage](usage.md)
-- [Modules](modules.md)
-- [Contributing](contributing.md)
-- [History](history.md)
-
-## Indices and tables
-
-- [Index](genindex)
-- [Module Index](modindex)
-- [Search](search)
+- [Contributing](../CONTRIBUTING.md)
+- [History](../HISTORY.md)

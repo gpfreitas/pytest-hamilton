@@ -18,7 +18,7 @@ jobs:
       matrix:
         # Test all supported Python versions under Ubuntu
         os: [ubuntu-latest]
-        python-version: ['3.12', '3.13', '3.14']
+        python-version: ['3.10', '3.11', '3.12', '3.13']
 
     runs-on: ${{ matrix.os }}
 
@@ -31,9 +31,9 @@ jobs:
     - name: Lint with ruff
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        uv run ruff check --select=E9,F63,F7,F82
+        uv run --extra test ruff check --select=E9,F63,F7,F82
         # exit-zero treats all errors as warnings
-        uv run ruff check --exit-zero --statistics
+        uv run --extra test ruff check --exit-zero --statistics
     - name: Run tests
       run: |
-        uv run pytest
+        uv run --extra test pytest

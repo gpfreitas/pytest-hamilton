@@ -38,6 +38,9 @@ homepage = "https://github.com/gpfreitas/pytest-hamilton"
 [project.entry-points.pytest11]
 hamilton = "pytest_hamilton.pytest_hamilton"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.ty]
 # All rules are enabled as "error" by default; no need to specify unless overriding.
 
