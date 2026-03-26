@@ -1,15 +1,17 @@
 # Justfile for pytest-hamilton
 
+DEFAULT_PYTHON := "3.13"
+
 # Show available commands
 list:
     @just --list
 
 # Run all the formatting, linting, and testing commands
 qa:
-    uv run --python=3.13 --extra test ruff format .
-    uv run --python=3.13 --extra test ruff check . --fix
-    uv run --python=3.13 --extra test ty check .
-    uv run --python=3.13 --extra test pytest
+    uv run --python={{DEFAULT_PYTHON}} --extra test ruff format .
+    uv run --python={{DEFAULT_PYTHON}} --extra test ruff check . --fix
+    uv run --python={{DEFAULT_PYTHON}} --extra test ty check .
+    uv run --python={{DEFAULT_PYTHON}} --extra test pytest
 
 # Run all the tests for all the supported Python versions
 testall:
@@ -21,18 +23,18 @@ testall:
 # Run all the tests, but allow for arguments to be passed
 test *ARGS:
     @echo "Running with arg: {{ARGS}}"
-    uv run --python=3.13 --extra test pytest {{ARGS}}
+    uv run --python={{DEFAULT_PYTHON}} --extra test pytest {{ARGS}}
 
 # Run all the tests, but on failure, drop into the debugger
 pdb *ARGS:
     @echo "Running with arg: {{ARGS}}"
-    uv run --python=3.13  --extra test pytest --pdb --maxfail=10 --pdbcls=IPython.terminal.debugger:TerminalPdb {{ARGS}}
+    uv run --python={{DEFAULT_PYTHON}} --extra test pytest --pdb --maxfail=10 --pdbcls=IPython.terminal.debugger:TerminalPdb {{ARGS}}
 
 # Run coverage, and build to HTML
 coverage:
-    uv run --python=3.13 --extra test coverage run -m pytest .
-    uv run --python=3.13 --extra test coverage report -m
-    uv run --python=3.13 --extra test coverage html
+    uv run --python={{DEFAULT_PYTHON}} --extra test coverage run -m pytest .
+    uv run --python={{DEFAULT_PYTHON}} --extra test coverage report -m
+    uv run --python={{DEFAULT_PYTHON}} --extra test coverage html
 
 # Build the project, useful for checking that packaging is correct
 build:
