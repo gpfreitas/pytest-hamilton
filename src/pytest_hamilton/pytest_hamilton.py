@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib
 import json
 import logging
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -13,7 +14,7 @@ import pytest
 
 logger = logging.getLogger(__name__)
 
-_PLUGIN_NAME = "hamilton_node_fixtures"
+_PLUGIN_NAME = "hamilton_driver_plugin"
 
 
 # ---------------------------------------------------------------------------
@@ -68,25 +69,24 @@ def _get_hamilton_option(config: pytest.Config, name: str) -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# Plugin class: holds the driver and all dynamic per-node fixtures
+# Plugin class: carries the Hamilton driver
 # ---------------------------------------------------------------------------
 
 
-class _HamiltonPlugin:
-    """Registered with pytest's plugin manager to provide Hamilton-backed fixtures.
-
-    Holds the Hamilton driver and exposes one function-scoped ``@pytest.fixture``
-    per DAG node, each of which pulls its value from ``hamilton_fixtures``.
-    The driver is stored as a plain instance attribute so that type checkers
-    are happy and we do not need to stash anything on ``pytest.Config``.
-    """
+class _HamiltonDriverPlugin:
+    """Holds the Hamilton driver so fixtures can retrieve it via the plugin manager."""
 
     def __init__(self, driver: Any) -> None:
         self.driver = driver
 
 
+# ---------------------------------------------------------------------------
+# Dynamic fixture factory
+# ---------------------------------------------------------------------------
+
+
 def _make_node_fixture(name: str) -> Callable[..., Any]:
-    """Return a function-scoped fixture that extracts *name* from hamilton_fixtures."""
+    """Return a function-scoped pytest fixture that extracts *name* from hamilton_fixtures."""
 
     @pytest.fixture(name=name)
     def _node_fixture(hamilton_fixtures: dict[str, Any]) -> Any:
@@ -97,37 +97,54 @@ def _make_node_fixture(name: str) -> Callable[..., Any]:
 
 
 # ---------------------------------------------------------------------------
-# Plugin configuration: build the driver and register the plugin
+# Plugin configuration: build the driver and register fixtures
 # ---------------------------------------------------------------------------
 
 
 def pytest_configure(config: pytest.Config) -> None:
     """Build the Hamilton driver and register one fixture per DAG node.
 
-    This hook runs early enough that the dynamically created fixtures are
-    available during collection.  If no modules are configured the plugin
-    is a complete no-op, so it never interferes with existing test suites.
+    This hook runs before collection, so any fixture functions added here to
+    the plugin module will be discovered when pytest scans the module later.
+    If no modules are configured the plugin is a complete no-op and never
+    interferes with existing test suites.
     """
     modules_spec = _get_hamilton_option(config, "modules")
     if not modules_spec:
         return
 
-    import hamilton.driver  # imported lazily; sf-hamilton is a runtime dep but not needed at import time
+    # Prepend rootdir to sys.path so that module names relative to the project
+    # root (or pytester sandbox) are importable at configure time, before
+    # pytest's own import machinery adds them during collection.
+    rootdir = str(config.rootpath)
+    if rootdir not in sys.path:
+        sys.path.insert(0, rootdir)
+
+    import hamilton.driver  # imported lazily; sf-hamilton is a runtime dep
 
     module_names = [m.strip() for m in modules_spec.split(",") if m.strip()]
     modules = [importlib.import_module(name) for name in module_names]
 
     driver = hamilton.driver.Builder().with_config({}).with_modules(*modules).build()
 
-    # Build the plugin object (stores the driver, receives dynamic fixtures below).
-    plugin = _HamiltonPlugin(driver)
+    # Register the driver carrier so hamilton_fixture_driver can retrieve it.
+    config.pluginmanager.register(_HamiltonDriverPlugin(driver), name=_PLUGIN_NAME)
 
-    # Attach one fixture per DAG node directly to the plugin instance so that
-    # pytest discovers them when it inspects the plugin's attributes.
+    # Attach one fixture per DAG node directly to this plugin module.
+    #
+    # Why the module and not a separate plugin object?
+    # - pytest's FixtureManager scans module plugins during *collection*
+    #   (not at configure time), so attributes added here are present when
+    #   the scan happens.
+    # - Non-module plugin objects registered during pytest_configure are
+    #   scanned immediately via pytest_plugin_registered; in pytest 9 this
+    #   path has reliability issues with instance-dict fixtures.
+    # - Adding plain functions to a module avoids Python's descriptor protocol
+    #   (which would turn class-attribute functions into bound methods when
+    #   accessed via an instance, corrupting the fixture's argument list).
+    this_module = sys.modules[__name__]
     for node in driver.list_available_variables():
-        setattr(plugin, node.name, _make_node_fixture(node.name))
-
-    config.pluginmanager.register(plugin, name=_PLUGIN_NAME)
+        setattr(this_module, node.name, _make_node_fixture(node.name))
 
 
 # ---------------------------------------------------------------------------
@@ -139,13 +156,11 @@ def pytest_configure(config: pytest.Config) -> None:
 def hamilton_fixture_driver(request: pytest.FixtureRequest) -> Any:
     """The Hamilton driver for the test session.
 
-    This fixture is session-scoped so the driver (and any associated
-    compilation work) is shared across all tests in the run.
-
-    Skips the test automatically if no Hamilton modules were configured,
-    ensuring that projects without Hamilton are never affected.
+    Session-scoped so the driver and its compilation work are shared across
+    all tests.  Skips the test automatically when no Hamilton modules have
+    been configured, so projects without Hamilton are never affected.
     """
-    plugin: _HamiltonPlugin | None = request.config.pluginmanager.get_plugin(_PLUGIN_NAME)
+    plugin: _HamiltonDriverPlugin | None = request.config.pluginmanager.get_plugin(_PLUGIN_NAME)
     if plugin is None:
         pytest.skip(
             "No Hamilton modules configured. "
@@ -159,15 +174,13 @@ def hamilton_fixture_driver(request: pytest.FixtureRequest) -> Any:
 def input_config(request: pytest.FixtureRequest) -> dict[str, Any]:
     """Input values for the Hamilton DAG, loaded from a JSON file.
 
-    The JSON file is specified via --hamilton-config on the CLI or via
-    the 'hamilton_config' ini option.  Returns an empty dict when neither
-    is set, which is valid for DAGs whose inputs are fully defaulted.
+    Specified via --hamilton-config on the CLI or the 'hamilton_config'
+    ini option.  Returns an empty dict when neither is set, which is valid
+    for DAGs whose inputs are fully defaulted.
 
     Override this fixture in your own conftest.py to supply inputs
-    programmatically — for example, by reading from a database fixture or
-    by constructing values dynamically per test.
-
-    Example override::
+    programmatically — for example, reading from a database or constructing
+    values dynamically per test::
 
         # conftest.py
         import pytest
@@ -188,15 +201,15 @@ def hamilton_fixtures(
     hamilton_fixture_driver: Any,
     input_config: dict[str, Any],
 ) -> dict[str, Any]:
-    """Execute the Hamilton DAG for the subset of nodes requested by this test.
+    """Execute the Hamilton DAG for only the nodes requested by this test.
 
-    Only nodes whose names appear in ``request.fixturenames`` are computed,
-    so each test pays only for the DAG work it actually needs.  The result
-    is a plain ``dict`` mapping node name to computed value.
+    Intersects ``request.fixturenames`` with the set of available DAG nodes,
+    then calls ``driver.execute()`` for just that subset.  This means each
+    test only pays for the DAG work it actually needs.
 
-    Downstream per-node fixtures (e.g. ``add``, ``multiply``) pull their
-    values from this dict, so they are all computed in a single
-    ``driver.execute()`` call rather than one call per fixture.
+    Individual node fixtures (e.g. ``add``, ``multiply``) pull their values
+    from this dict, so all requested nodes are computed in one
+    ``driver.execute()`` call.
     """
     available = {node.name for node in hamilton_fixture_driver.list_available_variables()}
     requested = set(request.fixturenames)
