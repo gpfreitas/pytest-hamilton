@@ -113,15 +113,18 @@ just test tests/test_pytest_hamilton.py
 
 ## Deploying
 
-A reminder for the maintainers on how to deploy. Make sure all your changes are committed (including an entry in HISTORY.md). Then run:
+See [docs/releasing.md](docs/releasing.md) for the full release process,
+including one-time PyPI setup, the normal version-bump workflow, and a
+manual publishing fallback.
+
+Quick reference:
 
 ```sh
-uv version patch  # or: minor, major
-git commit -am "Release X.Y.Z"
-just tag
+# 1. Update HISTORY.md, then:
+uv version patch   # or: minor, major
+git commit -am "Release $(uv version --short)"
+just tag           # creates annotated tag and pushes → triggers GitHub Actions
 ```
-
-GitHub Actions will automatically publish to PyPI when the tag is pushed. See `.github/workflows/publish.yml` for details.
 
 ## Code of Conduct
 
