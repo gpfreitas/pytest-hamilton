@@ -16,6 +16,32 @@ logger = logging.getLogger(__name__)
 
 _PLUGIN_NAME = "hamilton_driver_plugin"
 
+# Names that must never be shadowed by dynamically-registered node fixtures.
+_RESERVED_FIXTURE_NAMES: frozenset[str] = frozenset(
+    {
+        # Plugin's own fixtures
+        "hamilton_fixture_driver",
+        "hamilton_fixtures",
+        "input_config",
+        # pytest built-in fixtures
+        "request",
+        "tmp_path",
+        "tmp_path_factory",
+        "capsys",
+        "capfd",
+        "caplog",
+        "monkeypatch",
+        "pytester",
+        "recwarn",
+        "doctest_namespace",
+        "cache",
+        "record_property",
+        "record_testsuite_property",
+        "record_xml_attribute",
+        "pytestconfig",
+    }
+)
+
 
 # ---------------------------------------------------------------------------
 # Option registration
@@ -62,7 +88,7 @@ def _get_hamilton_option(config: pytest.Config, name: str) -> str | None:
     """
     cli_flag = f"--hamilton-{name.replace('_', '-')}"
     cli_val: str | None = config.getoption(cli_flag, default=None)
-    if cli_val:
+    if cli_val is not None:
         return cli_val
     ini_val: str = config.getini(f"hamilton_{name}")
     return ini_val if ini_val else None
@@ -117,15 +143,31 @@ def pytest_configure(config: pytest.Config) -> None:
     # root (or pytester sandbox) are importable at configure time, before
     # pytest's own import machinery adds them during collection.
     rootdir = str(config.rootpath)
+    added_to_sys_path = False
     if rootdir not in sys.path:
         sys.path.insert(0, rootdir)
+        added_to_sys_path = True
 
     import hamilton.driver  # imported lazily; sf-hamilton is a runtime dep
 
     module_names = [m.strip() for m in modules_spec.split(",") if m.strip()]
-    modules = [importlib.import_module(name) for name in module_names]
 
-    driver = hamilton.driver.Builder().with_config({}).with_modules(*modules).build()
+    modules = []
+    for name in module_names:
+        try:
+            modules.append(importlib.import_module(name))
+        except ModuleNotFoundError as exc:
+            raise pytest.UsageError(
+                f"pytest-hamilton: could not import module {name!r}. "
+                f"Check the --hamilton-modules flag or 'hamilton_modules' ini option."
+            ) from exc
+
+    try:
+        driver = hamilton.driver.Builder().with_config({}).with_modules(*modules).build()
+    except Exception as exc:
+        raise pytest.UsageError(
+            f"pytest-hamilton: failed to build the Hamilton driver from modules {module_names!r}: {exc}"
+        ) from exc
 
     # Register the driver carrier so hamilton_fixture_driver can retrieve it.
     config.pluginmanager.register(_HamiltonDriverPlugin(driver), name=_PLUGIN_NAME)
@@ -143,8 +185,48 @@ def pytest_configure(config: pytest.Config) -> None:
     #   (which would turn class-attribute functions into bound methods when
     #   accessed via an instance, corrupting the fixture's argument list).
     this_module = sys.modules[__name__]
+    registered_node_names: list[str] = []
     for node in driver.list_available_variables():
+        if node.name in _RESERVED_FIXTURE_NAMES:
+            logger.warning(
+                "pytest-hamilton: skipping Hamilton node %r because it would "
+                "shadow a built-in or plugin fixture with the same name.",
+                node.name,
+            )
+            continue
         setattr(this_module, node.name, _make_node_fixture(node.name))
+        registered_node_names.append(node.name)
+
+    # Stash cleanup info so pytest_unconfigure can reverse the mutations.
+    config.stash.setdefault(_stash_key, {})
+    config.stash[_stash_key] = {
+        "registered_node_names": registered_node_names,
+        "added_to_sys_path": rootdir if added_to_sys_path else None,
+    }
+
+
+_stash_key = pytest.StashKey[dict[str, Any]]()
+
+
+def pytest_unconfigure(config: pytest.Config) -> None:
+    """Clean up module-level mutations made during pytest_configure."""
+    cleanup = config.stash.get(_stash_key, None)
+    if cleanup is None:
+        return
+
+    this_module = sys.modules[__name__]
+    for name in cleanup["registered_node_names"]:
+        try:
+            delattr(this_module, name)
+        except AttributeError:
+            pass
+
+    rootdir = cleanup["added_to_sys_path"]
+    if rootdir and rootdir in sys.path:
+        sys.path.remove(rootdir)
+
+    if config.pluginmanager.get_plugin(_PLUGIN_NAME) is not None:
+        config.pluginmanager.unregister(name=_PLUGIN_NAME)
 
 
 # ---------------------------------------------------------------------------
@@ -192,7 +274,10 @@ def input_config(request: pytest.FixtureRequest) -> dict[str, Any]:
     config_path = _get_hamilton_option(request.config, "config")
     if not config_path:
         return {}
-    return json.loads(Path(config_path).read_text())
+    path = Path(config_path)
+    if not path.is_absolute():
+        path = request.config.rootpath / path
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 @pytest.fixture

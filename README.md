@@ -44,7 +44,6 @@ def model_inputs(features: pd.DataFrame, labels: pd.Series) -> dict:
 Create an input config file:
 
 ```json
-// test_inputs.json
 {"raw_data": "..."}
 ```
 

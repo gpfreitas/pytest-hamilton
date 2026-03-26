@@ -201,7 +201,7 @@ class TestIniOptions:
         """A --hamilton-config flag overrides the ini value for that run."""
         pytester.makepyfile(sample_module=_SAMPLE_MODULE_SRC)
         pytester.makefile(".json", input_config=_INPUT_CONFIG_JSON)
-        alt_config = pytester.makefile(".json", alt_config='{"x": 1, "y": 1}')
+        pytester.makefile(".json", alt_config='{"x": 1, "y": 1}')
         pytester.makeini("""
             [pytest]
             hamilton_modules = sample_module
@@ -212,7 +212,7 @@ class TestIniOptions:
                 assert add == 2  # 1 + 1 from alt_config, not 3 + 4 from ini
         """)
         result = pytester.runpytest_subprocess(
-            f"--hamilton-config={alt_config}",
+            "--hamilton-config=alt_config.json",
         )
         result.assert_outcomes(passed=1)
 
@@ -232,3 +232,86 @@ class TestNoModules:
         """)
         result = pytester.runpytest_subprocess()
         result.assert_outcomes(skipped=1)
+
+
+# ---------------------------------------------------------------------------
+# TestErrorPaths
+# ---------------------------------------------------------------------------
+
+
+class TestErrorPaths:
+    """The plugin reports clear errors on misconfiguration."""
+
+    def test_nonexistent_module_gives_usage_error(self, pytester):
+        """--hamilton-modules pointing at a missing module produces a clear error."""
+        pytester.makepyfile("""
+            def test_placeholder():
+                pass
+        """)
+        result = pytester.runpytest_subprocess(
+            "--hamilton-modules=nonexistent_module",
+        )
+        result.stderr.fnmatch_lines(["*pytest-hamilton: could not import module*"])
+
+    def test_nonexistent_config_file_gives_error(self, pytester):
+        """--hamilton-config pointing at a missing file produces an error at test time."""
+        pytester.makepyfile(sample_module=_SAMPLE_MODULE_SRC)
+        pytester.makepyfile("""
+            def test_add(add):
+                pass
+        """)
+        result = pytester.runpytest_subprocess(
+            "--hamilton-modules=sample_module",
+            "--hamilton-config=nonexistent.json",
+        )
+        result.assert_outcomes(errors=1)
+
+    def test_malformed_json_config_gives_error(self, pytester):
+        """A JSON config file with invalid syntax produces an error at test time."""
+        pytester.makepyfile(sample_module=_SAMPLE_MODULE_SRC)
+        pytester.makefile(".json", bad_config="{not valid json")
+        pytester.makepyfile("""
+            def test_add(add):
+                pass
+        """)
+        result = pytester.runpytest_subprocess(
+            "--hamilton-modules=sample_module",
+            "--hamilton-config=bad_config.json",
+        )
+        result.assert_outcomes(errors=1)
+
+
+# ---------------------------------------------------------------------------
+# TestFixtureNameCollisions
+# ---------------------------------------------------------------------------
+
+
+class TestFixtureNameCollisions:
+    """Nodes whose names collide with reserved fixtures are skipped with a warning."""
+
+    def test_node_shadowing_builtin_is_skipped(self, pytester):
+        """A Hamilton node named 'tmp_path' must not shadow pytest's built-in."""
+        pytester.makepyfile(
+            collision_module="""
+def tmp_path(x: int) -> int:
+    return x + 1
+
+def safe_node(x: int) -> int:
+    return x + 2
+"""
+        )
+        pytester.makefile(".json", input_config='{"x": 5}')
+        pytester.makepyfile("""
+            import pathlib
+
+            def test_tmp_path_is_still_builtin(tmp_path):
+                assert isinstance(tmp_path, pathlib.Path)
+
+            def test_safe_node_works(safe_node):
+                assert safe_node == 7
+        """)
+        result = pytester.runpytest_subprocess(
+            "--hamilton-modules=collision_module",
+            "--hamilton-config=input_config.json",
+        )
+        result.assert_outcomes(passed=2)
