@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 `pytest-hamilton` is a pytest plugin that turns every node in an
-[Apache Hamilton](https://github.com/dagworks-inc/hamilton) DAG into a
+[Apache Hamilton](https://github.com/apache/hamilton) DAG into a
 ready-to-use pytest fixture — with zero boilerplate in your test files.
 
 Write a Hamilton module, point the plugin at it, and your tests can
@@ -110,7 +110,7 @@ pytest -p no:hamilton
 ### `hamilton_fixture_driver` (session-scoped)
 
 The underlying Hamilton
-[`Driver`](https://hamilton.dagworks.io/en/latest/reference/drivers/Driver/)
+[`Driver`](https://hamilton.apache.org/en/latest/reference/drivers/Driver/)
 for the test session.  Useful for asserting things about the DAG itself
 (e.g. node existence, metadata).
 
@@ -215,7 +215,6 @@ MIT — see [LICENSE](LICENSE).
 
 ## Credits
 
-Built with [Hamilton](https://github.com/dagworks-inc/hamilton) by
-DAGWorks and the excellent
+Built with [Apache Hamilton](https://github.com/apache/hamilton) and the excellent
 [pytest-plugin cookiecutter](https://github.com/pytest-dev/cookiecutter-pytest-plugin)
 as a structural reference.
