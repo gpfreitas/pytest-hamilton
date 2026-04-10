@@ -15,7 +15,7 @@ request any computed node by name, exactly like any other fixture.
 ## Installation
 
 ```bash
-pip install pytest-hamilton
+uv pip install "git+https://github.com/gpfreitas/pytest-hamilton"
 ```
 
 The plugin is auto-discovered by pytest via the `pytest11` entry point.
