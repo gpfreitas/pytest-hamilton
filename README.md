@@ -25,52 +25,41 @@ No `conftest.py` changes are required in your project.
 
 ## Quick Start
 
-Suppose you have a data pipeline in `lib_model.py`:
+Suppose you have a small DAG in `lib_model.py`:
 
 ```python
 # lib_model.py
-import polars as pl
 
-def features(raw_data: pl.DataFrame) -> pl.DataFrame:
-    return raw_data.select(["chas", "nox", "rm"])
+def x_plus_y(x: int, y: int) -> int:
+    return x + y
 
-def labels(raw_data: pl.DataFrame) -> pl.Series:
-    return raw_data["medv"]
-
-def model_inputs(features: pl.DataFrame, labels: pl.Series) -> dict:
-    return {"X": features, "y": labels}
+def final(x_plus_y: int) -> int:
+    return x_plus_y**2
 ```
 
-Create an input config file:
+Create an input config file `config.json`:
 
 ```json
-{"raw_data": "..."}
+{"x": 2, "y": 3}
 ```
-
-> **Note** For complex Python objects (like DataFrames) you will want to
-> override `input_config` in your own `conftest.py` — see
-> [Overriding `input_config`](#overriding-input_config) below.
 
 Then write tests using any DAG node as a fixture argument:
 
 ```python
 # test_lib_model.py
 
-def test_features_shape(features):
-    assert features.shape[1] == 3
+def test_x_plus_y(x_plus_y, x, y):
+    assert x_plus_y - x == y
 
-def test_labels_are_positive(labels):
-    assert (labels > 0).all()
-
-def test_model_inputs_keys(model_inputs):
-    assert "X" in model_inputs
-    assert "y" in model_inputs
+def test_final(final, x_plus_y):
+    factor = final / x_plus_y
+    assert factor == x_plus_y
 ```
 
 Run pytest with the plugin options:
 
 ```bash
-pytest --hamilton-modules=lib_model --hamilton-config=test_inputs.json
+pytest --hamilton-modules=lib_model --hamilton-config=config.json
 ```
 
 That's it. No `conftest.py`. No manually written fixtures.
@@ -122,7 +111,7 @@ def test_dag_has_features_node(hamilton_fixture_driver):
 
 Skips the test automatically when no modules have been configured.
 
-### `input_config` (function-scoped, overridable)
+### `input_config` (function-scoped)
 
 The dict of inputs loaded from the JSON config file.  Returns `{}` when
 no config path is given.
@@ -132,35 +121,6 @@ no config path is given.
 The raw dict returned by `driver.execute()` for the subset of DAG nodes
 requested by the current test.  Individual node fixtures (`features`,
 `labels`, …) are thin wrappers around this.
-
----
-
-## Overriding `input_config`
-
-`input_config` is an ordinary pytest fixture and can be overridden in
-your project's `conftest.py`.  This is the recommended way to supply
-inputs that can't easily be expressed as JSON (DataFrames, database
-connections, etc.):
-
-```python
-# conftest.py
-import polars as pl
-import pytest
-
-@pytest.fixture
-def input_config():
-    """Build a small in-memory DataFrame as the DAG input."""
-    df = pl.DataFrame({
-        "chas": [0, 1, 0],
-        "nox":  [0.5, 0.6, 0.7],
-        "rm":   [6.0, 6.5, 7.0],
-        "medv": [20.0, 25.0, 30.0],
-    })
-    return {"raw_data": df}
-```
-
-Your override shadows the default file-loading behaviour for every test
-in its scope.
 
 ---
 
@@ -190,7 +150,7 @@ pytest_plugins = ["pytester"]
 just test
 
 # Or directly with uv:
-uv run --python=3.13 --extra test pytest tests/
+uv run --python=3.14 --extra test pytest tests/
 ```
 
 ### How the tests work
