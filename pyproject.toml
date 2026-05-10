@@ -44,6 +44,9 @@ testpaths = ["tests"]
 [tool.ty]
 # All rules are enabled as "error" by default; no need to specify unless overriding.
 
+[tool.ty.src]
+exclude = ["examples", ".nox", "noxfile.py"]
+
 [tool.ruff]
 line-length = 120
 extend-exclude = ["examples", ".nox"]
