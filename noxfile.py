@@ -24,18 +24,22 @@ def _example_ids() -> list[str]:
     return sorted(p.name for p in EXAMPLES_DIR.iterdir() if p.is_dir() and p.name.startswith("example"))
 
 
-@nox.session(python=PYTHON_VERSIONS, venv_backend="uv")
-def tests(session: nox.Session) -> None:
-    """Run the plugin's own test suite across all supported Pythons."""
+def _uv_sync(session: nox.Session, project: Path | None = None) -> None:
+    """Sync the active venv from a uv project, with the test extra."""
+    args = ["uv", "sync", "--active", "--extra", "test"]
+    if project is not None:
+        args[2:2] = ["--project", str(project)]
     session.run_install(
-        "uv",
-        "sync",
-        "--active",
-        "--extra",
-        "test",
+        *args,
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
+
+
+@nox.session(python=PYTHON_VERSIONS, venv_backend="uv")
+def tests(session: nox.Session) -> None:
+    """Run the plugin's own test suite across all supported Pythons."""
+    _uv_sync(session)
     session.run("pytest", "-v")
 
 
@@ -44,16 +48,6 @@ def tests(session: nox.Session) -> None:
 def test_examples(session: nox.Session, example: str) -> None:
     """Run each examples/exampleNN/ in its own venv."""
     example_path = EXAMPLES_DIR / example
-    session.run_install(
-        "uv",
-        "sync",
-        "--project",
-        str(example_path),
-        "--active",
-        "--extra",
-        "test",
-        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
-        external=True,
-    )
+    _uv_sync(session, project=example_path)
     with session.chdir(example_path):
         session.run("pytest", "-v")
