@@ -21,11 +21,7 @@ PYTHON_VERSIONS = ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
 
 def _example_ids() -> list[str]:
-    return sorted(
-        p.name
-        for p in EXAMPLES_DIR.iterdir()
-        if p.is_dir() and p.name.startswith("example")
-    )
+    return sorted(p.name for p in EXAMPLES_DIR.iterdir() if p.is_dir() and p.name.startswith("example"))
 
 
 @nox.session(python=PYTHON_VERSIONS, venv_backend="uv")
