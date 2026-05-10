@@ -44,6 +44,12 @@ build:
     rm -rf dist
     uv build
 
+# Build the conda package (noarch, single artifact). Requires rattler-build on PATH.
+# Install with: brew install rattler-build  (or)  conda install -c conda-forge rattler-build
+conda-build:
+    rm -rf dist/conda
+    PKG_VERSION={{VERSION}} rattler-build build --recipe recipe/recipe.yaml --output-dir dist/conda
+
 VERSION := `grep -m1 '^version' pyproject.toml | sed -E 's/version = "(.*)"/\1/'`
 
 # Print the current version of the project

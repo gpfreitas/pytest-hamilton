@@ -26,6 +26,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Plugin tests across all supported Pythons (via nox) | `just testall` |
 | Each example template across all supported Pythons (via nox) | `just examples` |
 | Run a single nox cell directly | `uvx nox -s "tests-3.13"` or `uvx nox -s "test_examples-3.12(example='example01')"` |
+| Build the wheel + sdist | `just build` |
+| Build the conda package locally (requires `rattler-build` on PATH) | `just conda-build` |
 
 ## Architecture
 
@@ -43,3 +45,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Publishing
 
 GitHub Actions handles PyPI publishing (`.github/workflows/publish.yml`). Manual alternative: `just publish`.
+
+A `noarch` conda package is also built on every `v*` tag and attached to the GitHub Release by `.github/workflows/conda-release.yml`. Local build instructions live in `docs/build.md`; the release flow is documented in `docs/conda-releasing.md`. A separate recipe prepared for a future submission to `conda-forge/staged-recipes` lives in `docs/misc/conda-forge-submission/`.
