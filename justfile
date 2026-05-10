@@ -34,7 +34,7 @@ pdb *ARGS:
 
 # Run coverage, and build to HTML
 coverage:
-    uv run --python={{DEFAULT_PYTHON}} --extra test coverage run -m pytest .
+    uv run --python={{DEFAULT_PYTHON}} --extra test coverage run -m pytest tests
     uv run --python={{DEFAULT_PYTHON}} --extra test coverage report -m
     uv run --python={{DEFAULT_PYTHON}} --extra test coverage html
 
