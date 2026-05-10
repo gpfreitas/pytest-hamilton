@@ -1,4 +1,9 @@
-# Justfile for pytest-hamilton
+# Justfile for pytest-hamilton.
+#
+# Doctrine: `just` runs single-Python contributor verbs (qa, test, pdb,
+# coverage). Matrix work — testing the plugin and each example template
+# across all supported Pythons — is delegated to `nox` (see noxfile.py).
+# `nox` is invoked via `uvx` so it stays out of the project's `test` extras.
 
 DEFAULT_PYTHON := "3.14"
 
@@ -6,20 +11,20 @@ DEFAULT_PYTHON := "3.14"
 list:
     @just --list
 
-# Run all the formatting, linting, and testing commands
+# Run all the formatting, linting, and testing commands (single Python)
 qa:
     uv run --python={{DEFAULT_PYTHON}} --extra test ruff format .
     uv run --python={{DEFAULT_PYTHON}} --extra test ruff check . --fix
     uv run --python={{DEFAULT_PYTHON}} --extra test ty check .
     uv run --python={{DEFAULT_PYTHON}} --extra test pytest
 
-# Run all the tests for all the supported Python versions
+# Run the plugin's own test suite across all supported Pythons (via nox)
 testall:
-    uv run --python=3.10 --extra test pytest
-    uv run --python=3.11 --extra test pytest
-    uv run --python=3.12 --extra test pytest
-    uv run --python=3.13 --extra test pytest
-    uv run --python=3.14 --extra test pytest
+    uvx nox -s tests
+
+# Run each example template across all supported Pythons (via nox)
+examples:
+    uvx nox -s test_examples
 
 # Run all the tests, but allow for arguments to be passed
 test *ARGS:
@@ -56,7 +61,7 @@ tag:
     git push origin v{{VERSION}}
 
 # remove all build, test, coverage and Python artifacts
-clean: 
+clean:
 	clean-build
 	clean-pyc
 	clean-test
