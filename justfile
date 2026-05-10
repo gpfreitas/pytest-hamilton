@@ -1,9 +1,5 @@
-# Justfile for pytest-hamilton.
-#
-# Doctrine: `just` runs single-Python contributor verbs (qa, test, pdb,
-# coverage). Matrix work — testing the plugin and each example template
-# across all supported Pythons — is delegated to `nox` (see noxfile.py).
-# `nox` is invoked via `uvx` so it stays out of the project's `test` extras.
+# Justfile for pytest-hamilton — single-Python contributor verbs.
+# Matrix work is delegated to `nox` via `uvx`. See CLAUDE.md "Tooling philosophy".
 
 DEFAULT_PYTHON := "3.14"
 
