@@ -1,13 +1,13 @@
-import pandas as pd
+import polars as pl
 
 
-def features(raw_data: pd.DataFrame) -> pd.DataFrame:
-    return raw_data[["chas", "nox", "rm"]]
+def features(raw_data: pl.DataFrame) -> pl.DataFrame:
+    return raw_data.select(["chas", "nox", "rm"])
 
 
-def labels(raw_data: pd.DataFrame) -> pd.Series:
+def labels(raw_data: pl.DataFrame) -> pl.Series:
     return raw_data["medv"]
 
 
-def model_inputs(features: pd.DataFrame, labels: pd.Series) -> dict:
+def model_inputs(features: pl.DataFrame, labels: pl.Series) -> dict:
     return {"X": features, "y": labels}
