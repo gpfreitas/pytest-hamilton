@@ -119,7 +119,6 @@ def _make_node_fixture(name: str) -> Callable[..., Any]:
     def _node_fixture(self: Any, hamilton_fixtures: dict[str, Any]) -> Any:
         return hamilton_fixtures[name]
 
-    _node_fixture.__name__ = name
     return _node_fixture
 
 
