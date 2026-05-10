@@ -128,6 +128,9 @@ def _make_node_fixture(name: str) -> Callable[..., Any]:
 # ---------------------------------------------------------------------------
 
 
+_stash_key = pytest.StashKey[dict[str, Any]]()
+
+
 def pytest_configure(config: pytest.Config) -> None:
     """Build the Hamilton driver and register one fixture per DAG node.
 
@@ -199,14 +202,10 @@ def pytest_configure(config: pytest.Config) -> None:
     config.pluginmanager.register(DynamicNodesPlugin(), name=_NODES_PLUGIN_NAME)
 
     # Stash cleanup info so pytest_unconfigure can reverse the mutations.
-    config.stash.setdefault(_stash_key, {})
     config.stash[_stash_key] = {
         "registered_node_names": registered_node_names,
         "added_to_sys_path": rootdir if added_to_sys_path else None,
     }
-
-
-_stash_key = pytest.StashKey[dict[str, Any]]()
 
 
 def pytest_unconfigure(config: pytest.Config) -> None:
