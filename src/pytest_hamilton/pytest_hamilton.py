@@ -171,6 +171,9 @@ def pytest_configure(config: pytest.Config) -> None:
     try:
         driver = hamilton.driver.Builder().with_config({}).with_modules(*modules).build()
     except Exception as exc:
+        # Hamilton's Builder surfaces graph-construction errors as a mix of
+        # ValueError, KeyError, and lifecycle ValidationException with no
+        # common public base. Catch broadly and re-wrap as UsageError.
         raise pytest.UsageError(
             f"pytest-hamilton: failed to build the Hamilton driver from modules {module_names!r}: {exc}"
         ) from exc
