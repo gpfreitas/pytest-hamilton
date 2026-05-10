@@ -1,6 +1,6 @@
 # Justfile for pytest-hamilton
 
-DEFAULT_PYTHON := "3.13"
+DEFAULT_PYTHON := "3.14"
 
 # Show available commands
 list:
@@ -19,6 +19,7 @@ testall:
     uv run --python=3.11 --extra test pytest
     uv run --python=3.12 --extra test pytest
     uv run --python=3.13 --extra test pytest
+    uv run --python=3.14 --extra test pytest
 
 # Run all the tests, but allow for arguments to be passed
 test *ARGS:
