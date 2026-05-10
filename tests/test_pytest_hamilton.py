@@ -292,7 +292,8 @@ class TestErrorPaths:
         )
         result.stderr.fnmatch_lines(
             [
-                "*pytest-hamilton: could not import module 'lib_model.py'. Did you mean 'lib_model'? (Remove the .py extension)*"
+                "*pytest-hamilton: could not import module 'lib_model.py'."
+                " Did you mean 'lib_model'? (Remove the .py extension)*"
             ]
         )
 
