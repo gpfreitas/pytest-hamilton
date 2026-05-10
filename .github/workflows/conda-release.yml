@@ -1,0 +1,42 @@
+name: Publish conda package to GitHub Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write  # needed to upload assets to the Release for this tag
+
+jobs:
+  conda-build-and-attach:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Derive package version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify tag matches pyproject.toml version
+        run: |
+          pyproject_version=$(grep -m1 '^version' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
+          if [ "$pyproject_version" != "${{ steps.version.outputs.version }}" ]; then
+            echo "::error::Tag v$pyproject_version expected, got ${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
+
+      - name: Build noarch .conda
+        uses: prefix-dev/rattler-build-action@v0.2.37
+        with:
+          rattler-build-version: v0.64.1
+          recipe-path: recipe/recipe.yaml
+          upload-artifact: false
+          build-args: --output-dir dist/conda
+        env:
+          PKG_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Attach .conda to the GitHub Release for this tag
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/conda/noarch/*.conda
+          fail_on_unmatched_files: true
