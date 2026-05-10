@@ -245,7 +245,7 @@ def hamilton_fixture_driver(request: pytest.FixtureRequest) -> Any:
             "pytest-hamilton: No Hamilton modules configured. "
             "To enable node fixtures, set 'hamilton_modules' in your configuration. "
             "In pytest.ini, use [pytest] section; in pyproject.toml, use [tool.pytest.ini_options] "
-            "and ensure strings are quoted (e.g. hamilton_modules = \"lib_model\"). "
+            'and ensure strings are quoted (e.g. hamilton_modules = "lib_model"). '
             "Alternatively, pass --hamilton-modules on the command line."
         )
     return plugin.driver

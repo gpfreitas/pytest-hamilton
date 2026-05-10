@@ -259,9 +259,7 @@ class TestNoModules:
         """)
         result = pytester.runpytest_subprocess("-rs")
         result.assert_outcomes(skipped=1)
-        result.stdout.fnmatch_lines([
-            "*SKIPPED*pytest-hamilton: No Hamilton modules configured.*"
-        ])
+        result.stdout.fnmatch_lines(["*SKIPPED*pytest-hamilton: No Hamilton modules configured.*"])
 
 
 # ---------------------------------------------------------------------------
@@ -292,9 +290,11 @@ class TestErrorPaths:
         result = pytester.runpytest_subprocess(
             "--hamilton-modules=lib_model.py",
         )
-        result.stderr.fnmatch_lines([
-            "*pytest-hamilton: could not import module 'lib_model.py'. Did you mean 'lib_model'? (Remove the .py extension)*"
-        ])
+        result.stderr.fnmatch_lines(
+            [
+                "*pytest-hamilton: could not import module 'lib_model.py'. Did you mean 'lib_model'? (Remove the .py extension)*"
+            ]
+        )
 
     def test_nonexistent_config_file_gives_error(self, pytester):
         """--hamilton-config pointing at a missing file produces an error at test time."""
