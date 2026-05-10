@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Tooling philosophy
 
 - **`just` runs single-Python contributor verbs.** `qa`, `test`, `pdb`, `coverage` use `uv run` directly against `DEFAULT_PYTHON` (currently 3.14). Fast inner-loop feedback, no extra tool layer.
-- **`nox` owns the matrix.** `just testall` and `just examples` shell out to `uvx nox`. Two sessions in `noxfile.py`:
+- **`nox` owns the matrix.** `just testall` and `just examples` shell out to `uvx nox` — `nox` is intentionally not a project dep, so it runs in its own ephemeral environment and does not pollute the project venv. Two sessions in `noxfile.py`:
   - `tests` — plugin's own test suite across Python 3.10–3.14.
   - `test_examples` — each `examples/exampleNN/` in its own venv, parametrized over (Python, example).
 - **Examples are standalone copy-pasteable templates**, not in-repo subprojects. Each has its own `pyproject.toml` that declares `pytest-hamilton` from PyPI; a clearly-marked `[tool.uv.sources]` block redirects to the local checkout for dev only and is meant to be deleted on copy.
@@ -30,9 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Architecture
 
 - `src/pytest_hamilton/` — package source (src layout)
-  - `pytest_hamilton.py` — main plugin module
-  - `cli.py` — Typer-based CLI entry point (`pytest_hamilton` command)
-  - `utils.py` — utilities
+  - `pytest_hamilton.py` — the plugin (single module; no CLI, no helpers)
 - `tests/` — plugin tests (run by `just qa` / `just testall`)
 - `examples/exampleNN/` — standalone project templates (run by `just examples`); each has its own pyproject and pytest config
 - `noxfile.py` — matrix sessions; not invoked directly, only via `just testall` / `just examples`
