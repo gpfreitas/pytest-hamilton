@@ -41,6 +41,10 @@ hamilton = "pytest_hamilton.pytest_hamilton"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+[tool.coverage.run]
+source = ["src/pytest_hamilton"]
+branch = true
+
 [tool.ty]
 # All rules are enabled as "error" by default; no need to specify unless overriding.
 
