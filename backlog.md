@@ -48,3 +48,40 @@ right branch is selected per build-config value.
 example in `examples/`, and a fresh test. No user has reported the
 limitation yet; folding it into a review-driven cleanup pass would
 inflate scope.
+
+### Coverage: subprocess pytester runs aren't measured
+
+**Where:** `tests/test_pytest_hamilton.py` (whole suite uses
+`pytester.runpytest_subprocess(...)`), `pyproject.toml`
+`[tool.coverage.run]`.
+
+**Problem:** The plugin's tests intentionally spawn a fresh pytest
+process per case via `runpytest_subprocess` so the plugin loads from a
+clean state with no shared fixtures or import caches. But `coverage
+run` only instruments the parent process, so all the plugin code that
+actually executes inside the child pytest is invisible to the report.
+After scoping coverage to `src/pytest_hamilton/` (commit `6c75a2f`),
+the report shows ~36% — far below the real coverage the suite
+exercises.
+
+**Fix sketch:** wire up subprocess coverage. Two parts:
+
+1. Add `[tool.coverage.run].parallel = true` and a `sitecustomize.py`
+   (or set `COVERAGE_PROCESS_START=pyproject.toml`) so child processes
+   that import the package start their own coverage context. See
+   <https://coverage.readthedocs.io/en/latest/subprocess.html>.
+2. Run `coverage combine` before `coverage report`/`html` in the
+   justfile target, to merge the parent's `.coverage` with each child's
+   `.coverage.<pid>` file.
+
+Alternatively (smaller change), switch select tests that don't need a
+fully fresh interpreter to `pytester.runpytest(...)` (in-process) so
+they're measured directly. This sacrifices some isolation, so
+`runpytest_subprocess` should remain the default for tests that
+specifically care about plugin load order.
+
+**Why deferred:** The 36% number is misleading but not wrong — it
+reflects the parent process only, and the suite itself has solid
+functional coverage as written. Wiring up subprocess coverage is its
+own small project (config + justfile + verifying numbers look right)
+and not what the recent coverage-config commit was scoped to.
