@@ -1,24 +1,26 @@
-# Justfile for pytest-hamilton
+# Justfile for pytest-hamilton — single-Python contributor verbs.
+# Matrix work is delegated to `nox` via `uvx`. See CLAUDE.md "Tooling philosophy".
 
-DEFAULT_PYTHON := "3.13"
+DEFAULT_PYTHON := "3.14"
 
 # Show available commands
 list:
     @just --list
 
-# Run all the formatting, linting, and testing commands
+# Run all the formatting, linting, and testing commands (single Python)
 qa:
     uv run --python={{DEFAULT_PYTHON}} --extra test ruff format .
     uv run --python={{DEFAULT_PYTHON}} --extra test ruff check . --fix
     uv run --python={{DEFAULT_PYTHON}} --extra test ty check .
     uv run --python={{DEFAULT_PYTHON}} --extra test pytest
 
-# Run all the tests for all the supported Python versions
+# Run the plugin's own test suite across all supported Pythons (via nox)
 testall:
-    uv run --python=3.10 --extra test pytest
-    uv run --python=3.11 --extra test pytest
-    uv run --python=3.12 --extra test pytest
-    uv run --python=3.13 --extra test pytest
+    uvx nox -s tests
+
+# Run each example template across all supported Pythons (via nox)
+examples:
+    uvx nox -s test_examples
 
 # Run all the tests, but allow for arguments to be passed
 test *ARGS:
@@ -32,7 +34,7 @@ pdb *ARGS:
 
 # Run coverage, and build to HTML
 coverage:
-    uv run --python={{DEFAULT_PYTHON}} --extra test coverage run -m pytest .
+    uv run --python={{DEFAULT_PYTHON}} --extra test coverage run -m pytest tests
     uv run --python={{DEFAULT_PYTHON}} --extra test coverage report -m
     uv run --python={{DEFAULT_PYTHON}} --extra test coverage html
 
@@ -55,7 +57,7 @@ tag:
     git push origin v{{VERSION}}
 
 # remove all build, test, coverage and Python artifacts
-clean: 
+clean:
 	clean-build
 	clean-pyc
 	clean-test

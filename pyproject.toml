@@ -41,11 +41,19 @@ hamilton = "pytest_hamilton.pytest_hamilton"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+[tool.coverage.run]
+source = ["src/pytest_hamilton"]
+branch = true
+
 [tool.ty]
 # All rules are enabled as "error" by default; no need to specify unless overriding.
 
+[tool.ty.src]
+exclude = ["examples", ".nox", "noxfile.py"]
+
 [tool.ruff]
 line-length = 120
+extend-exclude = ["examples", ".nox"]
 
 [tool.ruff.lint]
 select = [

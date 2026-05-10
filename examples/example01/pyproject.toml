@@ -1,0 +1,26 @@
+[project]
+name = "example-01"
+version = "0.0.0"
+description = "pytest-hamilton quickstart: simple DAG with JSON config"
+requires-python = ">=3.10"
+dependencies = [
+    "pytest-hamilton>=0.1",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.uv]
+package = false
+
+# DEV ONLY — delete this entire [tool.uv.sources] table when you copy this
+# folder to start a new project. It points pytest-hamilton at the in-repo
+# checkout so the plugin's own CI can exercise the template. Downstream
+# users get pytest-hamilton from PyPI as declared in [project].dependencies
+# above.
+[tool.uv.sources]
+pytest-hamilton = { path = "../..", editable = true }
+
+[tool.pytest.ini_options]
+hamilton_modules = "lib_model"
+hamilton_config = "config.json"

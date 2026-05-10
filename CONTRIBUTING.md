@@ -81,8 +81,8 @@ by `uv` as part of step 3 below. You do not need to install them separately.
 5. When you're done making changes, check that your changes pass linting and the tests:
 
    ```sh
-   just qa        # format + lint + type-check + test (Python 3.13)
-   just testall   # run tests across all supported Python versions (3.10–3.13)
+   just qa        # format + lint + type-check + test (Python 3.14)
+   just testall   # run tests across all supported Python versions (3.10–3.14)
    ```
 
 6. Commit your changes and push your branch to GitHub:
@@ -101,7 +101,7 @@ Before you submit a pull request, check that it meets these guidelines:
 
 1. The pull request should include tests.
 2. If the pull request adds functionality, the docs should be updated. Put your new functionality into a function with a docstring, and add the feature to the list in README.md.
-3. The pull request should work for Python 3.12 and 3.13. Tests run in GitHub Actions on every pull request to the main branch, make sure that the tests pass for all supported Python versions.
+3. The pull request should work for Python 3.10 through 3.14. Tests run in GitHub Actions on every pull request to the main branch, make sure that the tests pass for all supported Python versions.
 
 ## Tips
 

@@ -15,7 +15,7 @@ request any computed node by name, exactly like any other fixture.
 ## Installation
 
 ```bash
-pip install pytest-hamilton
+uv pip install "git+https://github.com/gpfreitas/pytest-hamilton"
 ```
 
 The plugin is auto-discovered by pytest via the `pytest11` entry point.
@@ -29,15 +29,15 @@ Suppose you have a data pipeline in `lib_model.py`:
 
 ```python
 # lib_model.py
-import pandas as pd
+import polars as pl
 
-def features(raw_data: pd.DataFrame) -> pd.DataFrame:
-    return raw_data[["chas", "nox", "rm"]]
+def features(raw_data: pl.DataFrame) -> pl.DataFrame:
+    return raw_data.select(["chas", "nox", "rm"])
 
-def labels(raw_data: pd.DataFrame) -> pd.Series:
+def labels(raw_data: pl.DataFrame) -> pl.Series:
     return raw_data["medv"]
 
-def model_inputs(features: pd.DataFrame, labels: pd.Series) -> dict:
+def model_inputs(features: pl.DataFrame, labels: pl.Series) -> dict:
     return {"X": features, "y": labels}
 ```
 
@@ -144,13 +144,13 @@ connections, etc.):
 
 ```python
 # conftest.py
+import polars as pl
 import pytest
-import pandas as pd
 
 @pytest.fixture
-def input_config(tmp_path):
+def input_config():
     """Build a small in-memory DataFrame as the DAG input."""
-    df = pd.DataFrame({
+    df = pl.DataFrame({
         "chas": [0, 1, 0],
         "nox":  [0.5, 0.6, 0.7],
         "rm":   [6.0, 6.5, 7.0],

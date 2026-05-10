@@ -1,4 +1,4 @@
-import pandas as pd
+import polars as pl
 import pytest
 
 
@@ -6,12 +6,11 @@ import pytest
 def input_config():
     """Supply a small in-memory DataFrame as the Hamilton DAG input.
 
-    The quickstart module expects a 'raw_data' DataFrame with columns
-    chas, nox, rm, medv.  JSON cannot encode DataFrames, so we override
-    the plugin's default input_config fixture here instead of using
-    --hamilton-config.
+    The pipeline's root input (`raw_data`) is a polars DataFrame, which
+    cannot be expressed in JSON. Overriding `input_config` in conftest.py
+    is the recommended approach for any input that isn't a JSON primitive.
     """
-    df = pd.DataFrame(
+    df = pl.DataFrame(
         {
             "chas": [0, 1, 0],
             "nox": [0.5, 0.6, 0.7],

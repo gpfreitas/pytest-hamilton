@@ -15,6 +15,7 @@ import pytest
 logger = logging.getLogger(__name__)
 
 _PLUGIN_NAME = "hamilton_driver_plugin"
+_NODES_PLUGIN_NAME = "hamilton_nodes_plugin"
 
 # Names that must never be shadowed by dynamically-registered node fixtures.
 _RESERVED_FIXTURE_NAMES: frozenset[str] = frozenset(
@@ -115,16 +116,18 @@ def _make_node_fixture(name: str) -> Callable[..., Any]:
     """Return a function-scoped pytest fixture that extracts *name* from hamilton_fixtures."""
 
     @pytest.fixture(name=name)
-    def _node_fixture(hamilton_fixtures: dict[str, Any]) -> Any:
+    def _node_fixture(self: Any, hamilton_fixtures: dict[str, Any]) -> Any:
         return hamilton_fixtures[name]
 
-    _node_fixture.__name__ = name
     return _node_fixture
 
 
 # ---------------------------------------------------------------------------
 # Plugin configuration: build the driver and register fixtures
 # ---------------------------------------------------------------------------
+
+
+_stash_key = pytest.StashKey[dict[str, Any]]()
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -157,34 +160,34 @@ def pytest_configure(config: pytest.Config) -> None:
         try:
             modules.append(importlib.import_module(name))
         except ModuleNotFoundError as exc:
+            hint = ""
+            if name.endswith(".py"):
+                hint = f" Did you mean {name[:-3]!r}? (Remove the .py extension)"
             raise pytest.UsageError(
-                f"pytest-hamilton: could not import module {name!r}. "
-                f"Check the --hamilton-modules flag or 'hamilton_modules' ini option."
+                f"pytest-hamilton: could not import module {name!r}.{hint} "
+                "Check the --hamilton-modules flag or 'hamilton_modules' ini option."
             ) from exc
 
     try:
         driver = hamilton.driver.Builder().with_config({}).with_modules(*modules).build()
     except Exception as exc:
+        # Hamilton's Builder surfaces graph-construction errors as a mix of
+        # ValueError, KeyError, and lifecycle ValidationException with no
+        # common public base. Catch broadly and re-wrap as UsageError.
         raise pytest.UsageError(
             f"pytest-hamilton: failed to build the Hamilton driver from modules {module_names!r}: {exc}"
         ) from exc
 
     # Register the driver carrier so hamilton_fixture_driver can retrieve it.
     config.pluginmanager.register(_HamiltonDriverPlugin(driver), name=_PLUGIN_NAME)
+    logger.info("pytest-hamilton: driver successfully built with modules: %s", module_names)
 
-    # Attach one fixture per DAG node directly to this plugin module.
-    #
-    # Why the module and not a separate plugin object?
-    # - pytest's FixtureManager scans module plugins during *collection*
-    #   (not at configure time), so attributes added here are present when
-    #   the scan happens.
-    # - Non-module plugin objects registered during pytest_configure are
-    #   scanned immediately via pytest_plugin_registered; in pytest 9 this
-    #   path has reliability issues with instance-dict fixtures.
-    # - Adding plain functions to a module avoids Python's descriptor protocol
-    #   (which would turn class-attribute functions into bound methods when
-    #   accessed via an instance, corrupting the fixture's argument list).
-    this_module = sys.modules[__name__]
+    # Attach one fixture per DAG node to a dedicated plugin object and register
+    # it. Registering a new plugin object here (during configure) ensures that
+    # pytest's FixtureManager scans it and discovers the dynamic fixtures,
+    # even if the main plugin module was already scanned during initial
+    # registration.
+    fixture_map = {}
     registered_node_names: list[str] = []
     for node in driver.list_available_variables():
         if node.name in _RESERVED_FIXTURE_NAMES:
@@ -194,36 +197,31 @@ def pytest_configure(config: pytest.Config) -> None:
                 node.name,
             )
             continue
-        setattr(this_module, node.name, _make_node_fixture(node.name))
+        fixture_map[node.name] = _make_node_fixture(node.name)
         registered_node_names.append(node.name)
 
+    DynamicNodesPlugin = type("_HamiltonDynamicNodesPlugin", (), fixture_map)
+    config.pluginmanager.register(DynamicNodesPlugin(), name=_NODES_PLUGIN_NAME)
+
     # Stash cleanup info so pytest_unconfigure can reverse the mutations.
-    config.stash.setdefault(_stash_key, {})
     config.stash[_stash_key] = {
         "registered_node_names": registered_node_names,
         "added_to_sys_path": rootdir if added_to_sys_path else None,
     }
 
 
-_stash_key = pytest.StashKey[dict[str, Any]]()
-
-
 def pytest_unconfigure(config: pytest.Config) -> None:
-    """Clean up module-level mutations made during pytest_configure."""
+    """Clean up mutations made during pytest_configure."""
     cleanup = config.stash.get(_stash_key, None)
     if cleanup is None:
         return
 
-    this_module = sys.modules[__name__]
-    for name in cleanup["registered_node_names"]:
-        try:
-            delattr(this_module, name)
-        except AttributeError:
-            pass
-
     rootdir = cleanup["added_to_sys_path"]
     if rootdir and rootdir in sys.path:
         sys.path.remove(rootdir)
+
+    if config.pluginmanager.get_plugin(_NODES_PLUGIN_NAME) is not None:
+        config.pluginmanager.unregister(name=_NODES_PLUGIN_NAME)
 
     if config.pluginmanager.get_plugin(_PLUGIN_NAME) is not None:
         config.pluginmanager.unregister(name=_PLUGIN_NAME)
@@ -245,9 +243,11 @@ def hamilton_fixture_driver(request: pytest.FixtureRequest) -> Any:
     plugin: _HamiltonDriverPlugin | None = request.config.pluginmanager.get_plugin(_PLUGIN_NAME)
     if plugin is None:
         pytest.skip(
-            "No Hamilton modules configured. "
-            "Set 'hamilton_modules' in pytest.ini / pyproject.toml "
-            "or pass --hamilton-modules on the command line."
+            "pytest-hamilton: No Hamilton modules configured. "
+            "To enable node fixtures, set 'hamilton_modules' in your configuration. "
+            "In pytest.ini, use [pytest] section; in pyproject.toml, use [tool.pytest.ini_options] "
+            'and ensure strings are quoted (e.g. hamilton_modules = "lib_model"). '
+            "Alternatively, pass --hamilton-modules on the command line."
         )
     return plugin.driver
 

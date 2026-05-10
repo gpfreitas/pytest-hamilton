@@ -59,6 +59,16 @@ class TestHelloWorld:
         result = pytester.runpytest_subprocess()
         result.assert_outcomes(passed=1)
 
+    def test_unconfigured_plugin_fails_on_node_fixture_request(self, pytester):
+        """Requesting a node fixture when the plugin is not configured leads to a standard error."""
+        pytester.makepyfile("""
+            def test_no_config(thesum):
+                pass
+        """)
+        result = pytester.runpytest_subprocess()
+        result.assert_outcomes(errors=1)
+        result.stdout.fnmatch_lines(["*fixture 'thesum' not found*"])
+
 
 # ---------------------------------------------------------------------------
 # TestBasicFixtures
@@ -116,6 +126,23 @@ class TestBasicFixtures:
         result = pytester.runpytest_subprocess(
             "--hamilton-modules=sample_module",
             f"--hamilton-config={config}",
+        )
+        result.assert_outcomes(passed=1)
+
+    def test_nested_module_discovery(self, pytester):
+        """Hamilton modules in subpackages are discovered correctly."""
+        pytester.mkdir("subpackage")
+        (pytester.path / "subpackage" / "__init__.py").touch()
+        (pytester.path / "subpackage" / "model.py").write_text(_SAMPLE_MODULE_SRC)
+        pytester.makefile(".json", input_config=_INPUT_CONFIG_JSON)
+
+        pytester.makepyfile("""
+            def test_nested_add(add):
+                assert add == 7
+        """)
+        result = pytester.runpytest_subprocess(
+            "--hamilton-modules=subpackage.model",
+            "--hamilton-config=input_config.json",
         )
         result.assert_outcomes(passed=1)
 
@@ -230,8 +257,9 @@ class TestNoModules:
             def test_uses_driver(hamilton_fixture_driver):
                 pass  # should be skipped, not failed
         """)
-        result = pytester.runpytest_subprocess()
+        result = pytester.runpytest_subprocess("-rs")
         result.assert_outcomes(skipped=1)
+        result.stdout.fnmatch_lines(["*SKIPPED*pytest-hamilton: No Hamilton modules configured.*"])
 
 
 # ---------------------------------------------------------------------------
@@ -252,6 +280,22 @@ class TestErrorPaths:
             "--hamilton-modules=nonexistent_module",
         )
         result.stderr.fnmatch_lines(["*pytest-hamilton: could not import module*"])
+
+    def test_module_name_with_py_extension_gives_hint(self, pytester):
+        """Using a .py extension in --hamilton-modules provides a helpful hint."""
+        pytester.makepyfile("""
+            def test_placeholder():
+                pass
+        """)
+        result = pytester.runpytest_subprocess(
+            "--hamilton-modules=lib_model.py",
+        )
+        result.stderr.fnmatch_lines(
+            [
+                "*pytest-hamilton: could not import module 'lib_model.py'."
+                " Did you mean 'lib_model'? (Remove the .py extension)*"
+            ]
+        )
 
     def test_nonexistent_config_file_gives_error(self, pytester):
         """--hamilton-config pointing at a missing file produces an error at test time."""
