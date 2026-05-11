@@ -1,3 +1,7 @@
+**This project has not been released yet, but it is usable. Install it straight from GitHub for now.**
+
+---
+
 # pytest-hamilton
 
 ![PyPI version](https://img.shields.io/pypi/v/pytest-hamilton.svg)
