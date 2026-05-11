@@ -2,9 +2,9 @@
 
 See the [README](../README.md) for a full quickstart guide and configuration reference.
 
-A working end-to-end example is in the `examples/quickstart/` directory of the repository.
+A working end-to-end example is in the `examples/example01/` directory of the repository.
 Run it with:
 
 ```sh
-uv run --python=3.13 --extra test pytest examples/quickstart/ -v
+uv run --extra test pytest examples/example01/ -v
 ```
