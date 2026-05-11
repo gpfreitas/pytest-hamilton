@@ -8,7 +8,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at https://github.com/gpfreitas/pytest_hamilton/issues.
+Report bugs at https://github.com/gpfreitas/pytest-hamilton/issues.
 
 If you are reporting a bug, please include:
 
@@ -30,7 +30,7 @@ Pytest Hamilton could always use more documentation, whether as part of the offi
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/gpfreitas/pytest_hamilton/issues.
+The best way to send feedback is to file an issue at https://github.com/gpfreitas/pytest-hamilton/issues.
 
 If you are proposing a feature:
 
@@ -126,6 +126,3 @@ git commit -am "Release $(uv version --short)"
 just tag           # creates annotated tag and pushes → triggers GitHub Actions
 ```
 
-## Code of Conduct
-
-Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
