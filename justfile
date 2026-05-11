@@ -5,68 +5,65 @@ DEFAULT_PYTHON := "3.14"
 
 # Show available commands
 list:
-    @just --list
+	@just --list
 
 # Run all the formatting, linting, and testing commands (single Python)
 qa:
-    uv run --python={{DEFAULT_PYTHON}} --extra test ruff format .
-    uv run --python={{DEFAULT_PYTHON}} --extra test ruff check . --fix
-    uv run --python={{DEFAULT_PYTHON}} --extra test ty check .
-    uv run --python={{DEFAULT_PYTHON}} --extra test pytest
+	uv run --python={{DEFAULT_PYTHON}} --extra test ruff format .
+	uv run --python={{DEFAULT_PYTHON}} --extra test ruff check . --fix
+	uv run --python={{DEFAULT_PYTHON}} --extra test ty check .
+	uv run --python={{DEFAULT_PYTHON}} --extra test pytest
 
 # Run the plugin's own test suite across all supported Pythons (via nox)
 testall:
-    uvx nox -s tests
+	uvx nox -s tests
 
 # Run each example template across all supported Pythons (via nox)
 examples:
-    uvx nox -s test_examples
+	uvx nox -s test_examples
 
 # Run all the tests, but allow for arguments to be passed
 test *ARGS:
-    @echo "Running with arg: {{ARGS}}"
-    uv run --python={{DEFAULT_PYTHON}} --extra test pytest {{ARGS}}
+	@echo "Running with arg: {{ARGS}}"
+	uv run --python={{DEFAULT_PYTHON}} --extra test pytest {{ARGS}}
 
 # Run all the tests, but on failure, drop into the debugger
 pdb *ARGS:
-    @echo "Running with arg: {{ARGS}}"
-    uv run --python={{DEFAULT_PYTHON}} --extra test pytest --pdb --maxfail=10 --pdbcls=IPython.terminal.debugger:TerminalPdb {{ARGS}}
+	@echo "Running with arg: {{ARGS}}"
+	uv run --python={{DEFAULT_PYTHON}} --extra test pytest --pdb --maxfail=10 --pdbcls=IPython.terminal.debugger:TerminalPdb {{ARGS}}
 
 # Run coverage, and build to HTML
 coverage:
-    uv run --python={{DEFAULT_PYTHON}} --extra test coverage run -m pytest tests
-    uv run --python={{DEFAULT_PYTHON}} --extra test coverage report -m
-    uv run --python={{DEFAULT_PYTHON}} --extra test coverage html
+	uv run --python={{DEFAULT_PYTHON}} --extra test coverage run -m pytest tests
+	uv run --python={{DEFAULT_PYTHON}} --extra test coverage report -m
+	uv run --python={{DEFAULT_PYTHON}} --extra test coverage html
 
 # Build the project, useful for checking that packaging is correct
 build:
-    rm -rf build
-    rm -rf dist
-    uv build
+	rm -rf build
+	rm -rf dist
+	uv build
 
 # Build the conda package (noarch, single artifact). Requires rattler-build on PATH.
 # Install with: brew install rattler-build  (or)  conda install -c conda-forge rattler-build
 conda-build:
-    rm -rf dist/conda
-    PKG_VERSION={{VERSION}} rattler-build build --recipe recipe/recipe.yaml --output-dir dist/conda
+	rm -rf dist/conda
+	PKG_VERSION={{VERSION}} rattler-build build --recipe recipe/recipe.yaml --output-dir dist/conda
 
 VERSION := `grep -m1 '^version' pyproject.toml | sed -E 's/version = "(.*)"/\1/'`
 
 # Print the current version of the project
 version:
-    @echo "Current version is {{VERSION}}"
+	@echo "Current version is {{VERSION}}"
 
 # Tag the current version in git and put to github
 tag:
-    echo "Tagging version v{{VERSION}}"
-    git tag -a v{{VERSION}} -m "Creating version v{{VERSION}}"
-    git push origin v{{VERSION}}
+	echo "Tagging version v{{VERSION}}"
+	git tag -a v{{VERSION}} -m "Creating version v{{VERSION}}"
+	git push origin v{{VERSION}}
 
 # remove all build, test, coverage and Python artifacts
-clean:
-	clean-build
-	clean-pyc
-	clean-test
+clean: clean-build clean-pyc clean-test
 
 # remove build artifacts
 clean-build:
@@ -91,5 +88,5 @@ clean-test:
 
 # Publish to PyPI (manual alternative to GitHub Actions)
 publish:
-    uv build
-    uv publish
+	uv build
+	uv publish
