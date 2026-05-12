@@ -1,11 +1,7 @@
-"""
-Simple DAG to compute
+"""Simple DAG to compute::
 
-``
-x_plus_y = x + y
-final = x_plus_y**2
-``
-
+    x_plus_y = x + y
+    final = x_plus_y**2
 """
 
 

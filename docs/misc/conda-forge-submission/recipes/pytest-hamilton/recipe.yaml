@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+#
+# Recipe to submit to https://github.com/conda-forge/staged-recipes
+#
+# Copy this directory under `recipes/` in a fork of staged-recipes (so it
+# becomes `staged-recipes/recipes/pytest-hamilton/recipe.yaml`) and open
+# a PR. See ../README.md for the full submission checklist.
+#
+# After submission and merge, a feedstock will be auto-created at
+# `conda-forge/pytest-hamilton-feedstock`. From that point on, version
+# bumps are handled by `regro-cf-autotick-bot`; no further manual edits
+# are needed for routine releases.
+
+context:
+  name: pytest-hamilton
+  # NOTE: Update both `version` and `source.sha256` on every release.
+  # The conda-forge autotick bot does this automatically once the
+  # feedstock exists; on the initial staged-recipes submission, do it
+  # by hand.
+  version: "0.1.0"
+  python_min: "3.10"
+
+package:
+  name: ${{ name }}
+  version: ${{ version }}
+
+source:
+  url: https://pypi.org/packages/source/${{ name[0] }}/${{ name }}/${{ name | replace("-", "_") }}-${{ version }}.tar.gz
+  sha256: 84a3c7f4277842060c2fcb5f40ac51bb408cd2ffec9c4dfeac2eda94d7bfcf07
+
+build:
+  noarch: python
+  number: 0
+  script: ${{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+
+requirements:
+  host:
+    - python ${{ python_min }}.*
+    - hatchling
+    - pip
+  run:
+    - python >=${{ python_min }}
+    - pytest >=7.0
+    - sf-hamilton >=1.28.0
+
+tests:
+  - python:
+      imports:
+        - pytest_hamilton
+        - pytest_hamilton.pytest_hamilton
+      pip_check: true
+      python_version: ${{ python_min }}.*
+
+about:
+  homepage: https://github.com/gpfreitas/pytest-hamilton
+  repository: https://github.com/gpfreitas/pytest-hamilton
+  summary: Pytest plugin that creates automatic Hamilton-based fixtures for your tests.
+  description: |
+    pytest-hamilton is a pytest plugin that creates automatic
+    Apache Hamilton based fixtures for your tests, generating one
+    fixture per DAG node from a Hamilton driver.
+  license: MIT
+  license_file: LICENSE
+
+extra:
+  recipe-maintainers:
+    - gpfreitas

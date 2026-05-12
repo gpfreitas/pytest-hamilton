@@ -1,22 +1,22 @@
 # Installation
 
-## Stable release
+## From GitHub
 
-To install Pytest Hamilton, run this command in your terminal:
+Until the first PyPI release, install directly from the GitHub repository:
 
 ```sh
-uv add pytest-hamilton
+uv add "git+https://github.com/gpfreitas/pytest-hamilton"
 ```
 
-Or if you prefer to use `pip`:
+Or with `pip`:
 
 ```sh
-pip install pytest-hamilton
+pip install "git+https://github.com/gpfreitas/pytest-hamilton"
 ```
 
 ## From source
 
-The source files for pytest-hamilton can be downloaded from the [Github repo](https://github.com/gpfreitas/pytest-hamilton).
+The source files for pytest-hamilton can be downloaded from the [GitHub repo](https://github.com/gpfreitas/pytest-hamilton).
 
 You will need [uv](https://docs.astral.sh/uv/) installed first
 ([installation guide](https://docs.astral.sh/uv/getting-started/installation/)).
