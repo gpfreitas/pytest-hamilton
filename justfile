@@ -90,26 +90,55 @@ publish_pypi target="test":
 	uv build
 	{{ if target == "test" { "UV_PUBLISH_URL=https://test.pypi.org/legacy/ uv publish" } else { "uv publish" } }}
 
-# Prepare the conda-forge submission: refresh the staged-recipes draft from PyPI and build it locally. Requires rattler-build on PATH. Does NOT push or open a PR.
+# Walk through a conda-forge submission interactively: print the manual edit steps, wait for confirmation, then build the recipe locally with rattler-build. Requires rattler-build on PATH. Does NOT push or open a PR.
 publish_conda_forge:
 	#!/usr/bin/env bash
 	set -euo pipefail
-	SDIST_URL="https://pypi.org/packages/source/p/pytest-hamilton/pytest_hamilton-{{VERSION}}.tar.gz"
 	RECIPE="docs/misc/conda-forge-submission/recipes/pytest-hamilton/recipe.yaml"
+	SDIST_URL="https://pypi.org/packages/source/p/pytest-hamilton/pytest_hamilton-{{VERSION}}.tar.gz"
 
-	echo "==> Checking that pytest-hamilton {{VERSION}} is published on PyPI"
-	curl -fsSL -o /dev/null "$SDIST_URL" \
-	    || { echo "ERROR: pytest_hamilton-{{VERSION}}.tar.gz not found on PyPI. Publish to PyPI first."; exit 1; }
+	echo "==> Conda-forge submission prep for pytest-hamilton {{VERSION}}"
+	echo ""
+	echo "This is a guided one-time submission. After the recipe is merged to"
+	echo "conda-forge/staged-recipes, version bumps on the auto-created feedstock"
+	echo "are handled by regro-cf-autotick-bot — you should not need this recipe"
+	echo "again for normal releases."
+	echo ""
+	echo "Step 1: Verify the version is on PyPI"
+	echo "    The recipe builds from the PyPI sdist, so {{VERSION}} must already"
+	echo "    be published. Check:"
+	echo "        https://pypi.org/project/pytest-hamilton/{{VERSION}}/"
+	echo ""
+	echo "Step 2: Edit the recipe"
+	echo "    Open: $RECIPE"
+	echo ""
+	echo "    Update two fields:"
+	echo "      - context.version  (around line 20): set to \"{{VERSION}}\""
+	echo "      - source.sha256    (around line 29): see Step 3"
+	echo ""
+	echo "Step 3: Compute and paste the sha256"
+	echo "    The sha256 pins the build to the exact sdist bytes that were on"
+	echo "    PyPI when the recipe was authored. conda-forge CI downloads"
+	echo "    source.url and refuses to build if the hash does not match."
+	echo ""
+	echo "    Compute it with:"
+	echo "        curl -sSL \"$SDIST_URL\" | shasum -a 256"
+	echo ""
+	echo "    Paste the resulting 64-character hex string into source.sha256."
+	echo ""
+	echo "Step 4 (optional): Confirm maintainers"
+	echo "    extra.recipe-maintainers (bottom of the file) lists the conda-forge"
+	echo "    GitHub usernames who can merge feedstock PRs. Add co-maintainers"
+	echo "    here if anyone else has agreed to help."
+	echo ""
+	echo "Documentation:"
+	echo "    Local checklist:  docs/misc/conda-forge-submission/README.md"
+	echo "    conda-forge docs: https://conda-forge.org/docs/maintainer/adding_pkgs/"
+	echo ""
 
-	echo "==> Computing sha256 of the PyPI sdist"
-	SHA=$(curl -fsSL "$SDIST_URL" | shasum -a 256 | cut -d' ' -f1)
-	echo "    sha256: $SHA"
+	read -r -p "Press ENTER when the recipe file is edited and ready for us to continue (Ctrl-C to abort)..."
 
-	echo "==> Updating $RECIPE (context.version and source.sha256)"
-	sed -i.bak -E "s/^(  version: )\"[^\"]*\"$/\1\"{{VERSION}}\"/" "$RECIPE"
-	sed -i.bak -E "s/^(  sha256: ).*/\1$SHA/" "$RECIPE"
-	rm -f "$RECIPE.bak"
-
+	echo ""
 	echo "==> Building the recipe locally with rattler-build"
 	rm -rf dist/conda-forge
 	rattler-build build --recipe "$RECIPE" --output-dir dist/conda-forge
