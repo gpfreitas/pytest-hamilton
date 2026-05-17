@@ -99,6 +99,10 @@ publish_conda_forge:
 
 	echo "==> Conda-forge submission prep for pytest-hamilton {{VERSION}}"
 	echo ""
+	echo "These instructions condense the conda-forge \"Adding packages\" guide."
+	echo "Source (permalink, pinned 2026-04-07):"
+	echo "    https://github.com/conda-forge/conda-forge.github.io/blob/d5534110597fae4abe2aeac15feb8a6cdd17b176/docs/maintainer/adding_pkgs.mdx"
+	echo ""
 	echo "This is a guided one-time submission. After the recipe is merged to"
 	echo "conda-forge/staged-recipes, version bumps on the auto-created feedstock"
 	echo "are handled by regro-cf-autotick-bot — you should not need this recipe"
