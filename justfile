@@ -1,7 +1,8 @@
 # Justfile for pytest-hamilton — single-Python contributor verbs.
-# Matrix work is delegated to `nox` via `uvx`. See CLAUDE.md "Tooling philosophy".
+# Matrix work is delegated to `nox` via `uvx`. See AGENTS.md "Tooling philosophy".
 
 DEFAULT_PYTHON := "3.14"
+VERSION := `grep -m1 '^version' pyproject.toml | sed -E 's/version = "(.*)"/\1/'`
 
 # Show available commands
 list:
@@ -19,7 +20,7 @@ testall:
 	uvx nox -s tests
 
 # Run each example template across all supported Pythons (via nox)
-examples:
+test_examples:
 	uvx nox -s test_examples
 
 # Run all the tests, but allow for arguments to be passed
@@ -49,8 +50,6 @@ build:
 conda-build:
 	rm -rf dist/conda
 	PKG_VERSION={{VERSION}} rattler-build build --recipe recipe/recipe.yaml --output-dir dist/conda
-
-VERSION := `grep -m1 '^version' pyproject.toml | sed -E 's/version = "(.*)"/\1/'`
 
 # Print the current version of the project
 version:
