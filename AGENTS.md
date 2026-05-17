@@ -55,6 +55,6 @@ This file provides guidance to coding agents working in this repository.
 
 ## Publishing
 
-GitHub Actions handles PyPI publishing (`.github/workflows/publish.yml`). Manual alternative: `just publish`.
+GitHub Actions handles PyPI publishing (`.github/workflows/publish.yml`). Manual alternative: `just publish_pypi`.
 
 A `noarch` conda package is also built on every `v*` tag and attached to the GitHub Release by `.github/workflows/conda-release.yml`. Local build instructions live in `docs/build.md`; the release flow is documented in `docs/conda-releasing.md`. A separate recipe prepared for a future submission to `conda-forge/staged-recipes` lives in `docs/misc/conda-forge-submission/`.

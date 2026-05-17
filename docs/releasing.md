@@ -105,16 +105,16 @@ Monitor the run at
 ## Manual publishing fallback
 
 If you need to publish outside GitHub Actions (e.g. to fix a botched release,
-or before OIDC is configured), use `just publish`:
+or before OIDC is configured), use `just publish_pypi`:
 
 ```sh
-just publish   # runs: uv build && uv publish
+just publish_pypi   # runs: uv build && uv publish
 ```
 
 `uv publish` needs PyPI credentials. Supply them via environment variable:
 
 ```sh
-UV_PUBLISH_TOKEN=pypi-<your-token> just publish
+UV_PUBLISH_TOKEN=pypi-<your-token> just publish_pypi
 ```
 
 Or configure `~/.pypirc` and uv will read it automatically.

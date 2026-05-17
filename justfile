@@ -86,6 +86,6 @@ clean-test:
 	rm -fr .pytest_cache
 
 # Publish to PyPI (manual alternative to GitHub Actions)
-publish:
+publish_pypi:
 	uv build
 	uv publish
