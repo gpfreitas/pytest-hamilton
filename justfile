@@ -85,7 +85,7 @@ clean-test:
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
-# Publish to PyPI (manual alternative to GitHub Actions)
-publish_pypi:
+# Publish to PyPI (manual alternative to GitHub Actions). Default target is TestPyPI; pass `prod` for real PyPI.
+publish_pypi target="test":
 	uv build
-	uv publish
+	{{ if target == "test" { "UV_PUBLISH_URL=https://test.pypi.org/legacy/ uv publish" } else { "uv publish" } }}

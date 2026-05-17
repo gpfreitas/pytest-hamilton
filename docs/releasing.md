@@ -108,13 +108,19 @@ If you need to publish outside GitHub Actions (e.g. to fix a botched release,
 or before OIDC is configured), use `just publish_pypi`:
 
 ```sh
-just publish_pypi   # runs: uv build && uv publish
+just publish_pypi        # runs: uv build && UV_PUBLISH_URL=…/legacy/ uv publish  (TestPyPI)
+just publish_pypi prod   # runs: uv build && uv publish                            (real PyPI)
 ```
 
-`uv publish` needs PyPI credentials. Supply them via environment variable:
+The default target is **TestPyPI** on purpose — it is the safer destination
+and matches the recommendation to verify the build there first (see
+[Publishing to TestPyPI](#publishing-to-testpypi) below). Pass `prod` to
+publish to real PyPI.
+
+`uv publish` needs credentials. Supply them via environment variable:
 
 ```sh
-UV_PUBLISH_TOKEN=pypi-<your-token> just publish_pypi
+UV_PUBLISH_TOKEN=pypi-<your-token> just publish_pypi prod
 ```
 
 Or configure `~/.pypirc` and uv will read it automatically.
@@ -126,10 +132,11 @@ Or configure `~/.pypirc` and uv will read it automatically.
 To verify the build and metadata before a real release:
 
 ```sh
-uv build
-UV_PUBLISH_URL=https://test.pypi.org/legacy/ \
-UV_PUBLISH_TOKEN=pypi-<your-testpypi-token> \
-uv publish
+UV_PUBLISH_TOKEN=pypi-<your-testpypi-token> just publish_pypi
 ```
+
+This is the default target of `just publish_pypi` (i.e. `just publish_pypi`
+with no arguments). It sets `UV_PUBLISH_URL=https://test.pypi.org/legacy/`
+under the hood, so no extra env var is needed beyond the TestPyPI token.
 
 Check the result at <https://test.pypi.org/project/pytest-hamilton/>.
