@@ -20,6 +20,12 @@ its `recipes/` folder.
 
 ## Pre-submission checklist
 
+Steps 1–3 below (version check, sha256 update, local rattler-build) are
+all wrapped up in `just publish_conda_forge` — running it does the prep
+in one shot and prints the remaining manual steps. The longhand below
+is kept for reference and for cases where you want to do the steps by
+hand.
+
 Before opening the PR, walk through these steps:
 
 1. **The version on PyPI**. The recipe builds from the PyPI sdist. Make
@@ -46,7 +52,9 @@ Before opening the PR, walk through these steps:
 
 4. **Maintainers**. `extra.recipe-maintainers` lists conda-forge GitHub
    usernames who can merge PRs to the future feedstock. Add co-maintainers
-   here before submitting if anyone else has agreed to help.
+   here before submitting if anyone else has agreed to help. This step is
+   not automated by `just publish_conda_forge` — edit `recipe.yaml`
+   directly.
 
 ## Submission steps
 

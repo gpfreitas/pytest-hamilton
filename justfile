@@ -89,3 +89,35 @@ clean-test:
 publish_pypi target="test":
 	uv build
 	{{ if target == "test" { "UV_PUBLISH_URL=https://test.pypi.org/legacy/ uv publish" } else { "uv publish" } }}
+
+# Prepare the conda-forge submission: refresh the staged-recipes draft from PyPI and build it locally. Requires rattler-build on PATH. Does NOT push or open a PR.
+publish_conda_forge:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	SDIST_URL="https://pypi.org/packages/source/p/pytest-hamilton/pytest_hamilton-{{VERSION}}.tar.gz"
+	RECIPE="docs/misc/conda-forge-submission/recipes/pytest-hamilton/recipe.yaml"
+
+	echo "==> Checking that pytest-hamilton {{VERSION}} is published on PyPI"
+	curl -fsSL -o /dev/null "$SDIST_URL" \
+	    || { echo "ERROR: pytest_hamilton-{{VERSION}}.tar.gz not found on PyPI. Publish to PyPI first."; exit 1; }
+
+	echo "==> Computing sha256 of the PyPI sdist"
+	SHA=$(curl -fsSL "$SDIST_URL" | shasum -a 256 | cut -d' ' -f1)
+	echo "    sha256: $SHA"
+
+	echo "==> Updating $RECIPE (context.version and source.sha256)"
+	sed -i.bak -E "s/^(  version: )\"[^\"]*\"$/\1\"{{VERSION}}\"/" "$RECIPE"
+	sed -i.bak -E "s/^(  sha256: ).*/\1$SHA/" "$RECIPE"
+	rm -f "$RECIPE.bak"
+
+	echo "==> Building the recipe locally with rattler-build"
+	rm -rf dist/conda-forge
+	rattler-build build --recipe "$RECIPE" --output-dir dist/conda-forge
+
+	echo ""
+	echo "==> Local prep complete. Remaining manual steps:"
+	echo "    1. Review and commit the diff in $RECIPE"
+	echo "    2. Fork https://github.com/conda-forge/staged-recipes"
+	echo "    3. Copy that recipe directory into your fork at recipes/pytest-hamilton/"
+	echo "    4. Commit, push, and open a PR against conda-forge/staged-recipes"
+	echo "    See docs/misc/conda-forge-submission/README.md for the full checklist."
